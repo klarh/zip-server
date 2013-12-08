@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
 
 import Codec.Archive.Zip
 import Control.Applicative((<$>))
@@ -12,9 +12,17 @@ import Network.HTTP.Types
 import Network.Mime
 import Network.Wai
 import Network.Wai.Handler.Warp
+import System.Console.CmdArgs
+import System.Directory (doesFileExist)
 import System.Environment
 import System.FilePath.Posix(joinPath)
 import System.IO (FilePath(..))
+
+data Options = Options {port :: Int,
+                        filename :: String} deriving (Data, Typeable, Show)
+
+defopts = Options {port = 7784,
+                   filename = def &= typFile}
 
 app contents zipFile req = do
   let path = joinPath $ T.unpack <$> pathInfo req
@@ -36,8 +44,12 @@ makeResponse entry = responseLBS status200 [("Content-Type", typ)] (fromEntry en
     typ = defaultMimeLookup . T.pack . eRelativePath $ entry
 
 main = do
-  (port:fileName:_) <- getArgs
-  archive <- toArchive <$> B.readFile fileName
+  (Options port filename) <- cmdArgs defopts
+
+  fileExists <- doesFileExist filename
+  archive <- if (fileExists)
+    then toArchive <$> B.readFile filename
+    else error "Error: zip file not found; specify with --filename"
+
   let files = filesInArchive archive
-      port' = read port :: Int
-  run port' $ app files archive
+  run port $ app files archive

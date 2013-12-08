@@ -29,6 +29,8 @@ executable zip-server
                        text >= 0.11,
                        containers >= 0.5,
                        http-types >= 0.3,
-                       mime-types >= 0.1
+                       mime-types >= 0.1,
+                       cmdargs >= 0.10,
+                       directory >= 1.2
   -- hs-source-dirs:
   default-language:    Haskell2010
