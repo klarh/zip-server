@@ -11,7 +11,8 @@ import Data.Text.Lazy.Encoding (encodeUtf8)
 import Network.HTTP.Types
 import Network.Mime
 import Network.Wai
-import Network.Wai.Handler.Warp
+import Network.Wai.Handler.Warp (HostPreference(..), Settings(..),
+                                 defaultSettings, runSettings)
 import System.Console.CmdArgs
 import System.Directory (doesFileExist)
 import System.Environment
@@ -19,9 +20,11 @@ import System.FilePath.Posix(joinPath)
 import System.IO (FilePath(..))
 
 data Options = Options {port :: Int,
+                        host :: String,
                         filename :: String} deriving (Data, Typeable, Show)
 
 defopts = Options {port = 7784,
+                   host = "*",
                    filename = def &= typFile}
 
 app contents zipFile req = do
@@ -44,7 +47,7 @@ makeResponse entry = responseLBS status200 [("Content-Type", typ)] (fromEntry en
     typ = defaultMimeLookup . T.pack . eRelativePath $ entry
 
 main = do
-  (Options port filename) <- cmdArgs defopts
+  (Options port host filename) <- cmdArgs defopts
 
   fileExists <- doesFileExist filename
   archive <- if (fileExists)
@@ -52,4 +55,5 @@ main = do
     else error "Error: zip file not found; specify with --filename"
 
   let files = filesInArchive archive
-  run port $ app files archive
+      settings = defaultSettings {settingsPort=port, settingsHost=Host host}
+  runSettings settings $ app files archive
