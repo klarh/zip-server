@@ -23,9 +23,12 @@ data Options = Options {port :: Int,
                         host :: String,
                         filename :: String} deriving (Data, Typeable, Show)
 
-defopts = Options {port = 7784,
-                   host = "*",
-                   filename = def &= typFile}
+defopts = Options {port = 7784 &= help "Port to listen on" &= typ "PORT",
+                   host = "*" &= help "Hostname to use (* for any)" &= typ "HOST",
+                   filename = def &= help "Zip file to serve from" &= typFile}
+          &= program "zip-server"
+          &= summary ""
+          &= help "Serve a static website from a zip file"
 
 app contents zipFile req = do
   let path = joinPath $ T.unpack <$> pathInfo req
