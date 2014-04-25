@@ -5,6 +5,7 @@ import Control.Applicative((<$>))
 import Data.Monoid (mconcat)
 import qualified Data.Set as S
 import qualified Data.Text as T
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as B
 import Data.Text.Lazy as LT
 import Data.Text.Lazy.Encoding (encodeUtf8)
@@ -45,9 +46,12 @@ listFiles contents = responseLBS status200 [("Content-Type", "text/html")] conts
     middle = mconcat $ middle' . encodeUtf8 . LT.pack <$> contents
     middle' x = mconcat ["<li><a href=\"", x, "\">", x, "</a></li>"] :: B.ByteString
 
-makeResponse entry = responseLBS status200 [("Content-Type", typ)] (fromEntry entry)
+makeResponse entry = responseLBS status200 headers entry'
   where
+    headers = [(hContentType, typ), (hContentLength, clength)] :: ResponseHeaders
     typ = defaultMimeLookup . T.pack . eRelativePath $ entry
+    clength = BS.concat . B.toChunks . encodeUtf8 . LT.pack . show . B.length $ entry'
+    entry' = fromEntry entry
 
 main = do
   (Options port host filename) <- cmdArgs defopts
