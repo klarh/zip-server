@@ -2,6 +2,7 @@
 
 import Codec.Archive.Zip
 import Control.Applicative((<$>))
+import Data.Maybe
 import Data.Monoid (mconcat)
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -11,9 +12,13 @@ import Data.Text.Lazy as LT
 import Data.Text.Lazy.Encoding (encodeUtf8)
 import Network.HTTP.Types
 import Network.Mime
+import Network.Socket (AddrInfoFlag(..), Family(..), PortNumber(..),
+                       SockAddr(..), SocketType(..), addrAddress, addrFamily,
+                       addrFlags, addrProtocol, addrSocketType, bind,
+                       defaultHints, defaultProtocol, getAddrInfo, listen, socket)
 import Network.Wai
 import Network.Wai.Handler.Warp (HostPreference(..), Settings(..),
-                                 defaultSettings, runSettings)
+                                 defaultSettings, runSettingsSocket, setPort)
 import System.Console.CmdArgs
 import System.Directory (doesFileExist)
 import System.Environment
@@ -56,11 +61,23 @@ makeResponse entry = responseLBS status200 headers entry'
 main = do
   (Options port host filename) <- cmdArgs defopts
 
+  let port' = PortNum . fromIntegral $ port
+      aiFlags
+        | host == "*" = [AI_PASSIVE]
+        | otherwise = []
+      hints = Just $ defaultHints {addrFlags=aiFlags}
+
   fileExists <- doesFileExist filename
   archive <- if (fileExists)
     then toArchive <$> B.readFile filename
     else error "Error: zip file not found; specify with --filename"
 
+  (toBind:_) <- getAddrInfo hints (Just host) (Just . show $ port)
+
+  sock <- socket (addrFamily toBind) (addrSocketType toBind) (addrProtocol toBind)
+  bind sock (addrAddress toBind)
+  listen sock 3
+
   let files = filesInArchive archive
-      settings = defaultSettings {settingsPort=port, settingsHost=(read host)}
-  runSettings settings $ app files archive
+      settings = setPort port $ defaultSettings
+  runSettingsSocket settings sock $ app files archive
