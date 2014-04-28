@@ -62,5 +62,5 @@ main = do
     else error "Error: zip file not found; specify with --filename"
 
   let files = filesInArchive archive
-      settings = defaultSettings {settingsPort=port, settingsHost=Host host}
+      settings = defaultSettings {settingsPort=port, settingsHost=(read host)}
   runSettings settings $ app files archive

@@ -21,7 +21,7 @@ executable zip-server
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.6 && <4.7,
-                       warp >= 2.0,
+                       warp >= 2.1 && < 2.2,
                        wai >= 2.0,
                        zip-archive >= 0.1.4,
                        bytestring >= 0.9,
