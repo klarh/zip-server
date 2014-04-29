@@ -62,10 +62,8 @@ main = do
   (Options port host filename) <- cmdArgs defopts
 
   let port' = PortNum . fromIntegral $ port
-      aiFlags
-        | host == "*" = [AI_PASSIVE]
-        | otherwise = []
-      hints = Just $ defaultHints {addrFlags=aiFlags}
+      aiFlags = [AI_PASSIVE]
+      hints = Just $ defaultHints {addrFlags=aiFlags, addrSocketType=Stream}
 
   fileExists <- doesFileExist filename
   archive <- if (fileExists)
