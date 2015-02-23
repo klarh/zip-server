@@ -13,9 +13,10 @@ import Data.Text.Lazy.Encoding (encodeUtf8)
 import Network.HTTP.Types
 import Network.Mime
 import Network.Socket (AddrInfoFlag(..), Family(..), PortNumber(..),
-                       SockAddr(..), SocketType(..), addrAddress, addrFamily,
+                       SockAddr(..), SocketOption(..), SocketType(..), addrAddress, addrFamily,
                        addrFlags, addrProtocol, addrSocketType, bind,
-                       defaultHints, defaultProtocol, getAddrInfo, listen, socket)
+                       defaultHints, defaultProtocol, getAddrInfo, listen,
+                       setSocketOption, socket)
 import Network.Wai
 import Network.Wai.Handler.Warp (HostPreference(..), Settings(..),
                                  defaultSettings, runSettingsSocket, setPort)
@@ -73,6 +74,7 @@ main = do
   (toBind:_) <- getAddrInfo hints (Just host) (Just . show $ port)
 
   sock <- socket (addrFamily toBind) (addrSocketType toBind) (addrProtocol toBind)
+  setSocketOption sock ReuseAddr 1
   bind sock (addrAddress toBind)
   listen sock 3
 
